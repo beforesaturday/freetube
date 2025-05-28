@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>FreeTube</title>
+  <style>
+    body {
+      background-color: #000000;
+      color: #00C896;
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 20px;
+    }
+    h1 {
+      color: #B2FFFF;
+      text-align: center;
+      font-size: 3em;
+      margin-bottom: 20px;
+    }
+    h2 {
+      color: #00C896;
+      margin-top: 40px;
+    }
+    form {
+      margin-bottom: 30px;
+    }
+    input[type="file"],
+    input[type="text"],
+    button {
+      background-color: #000000;
+      color: #00C896;
+      border: 1px solid #00C896;
+      padding: 10px;
+      margin-top: 10px;
+      margin-right: 10px;
+      cursor: pointer;
+      font-size: 1em;
+    }
+    input[type="file"]::file-selector-button {
+      background-color: #000000;
+      color: #00C896;
+      border: 1px solid #00C896;
+      padding: 5px 10px;
+      cursor: pointer;
+    }
+    #videos {
+      margin-top: 20px;
+    }
+    video {
+      display: block;
+      margin-bottom: 10px;
+      max-width: 100%;
+    }
+    hr {
+      border: 1px solid #00C896;
+    }
+    .video-item {
+      border: 1px solid #00C896;
+      padding: 15px;
+      margin-bottom: 20px;
+    }
+    .video-item strong {
+      display: block;
+      margin-bottom: 8px;
+      font-size: 1.2em;
+      color: #B2FFFF;
+    }
+    .video-info p {
+      margin: 4px 0;
+    }
+    .unknown {
+      color: #FF5555;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>FreeTube</h1>
+
+  <h2>Upload a video</h2>
+  <form id="uploadForm" enctype="multipart/form-data">
+    <input type="text" name="title" placeholder="Video title" required />
+    <input type="text" name="combo" placeholder="Combo used (e.g. ATW HATW HTW)" required />
+    <input type="file" name="video" accept="video/*" required />
+    <button type="submit">Upload</button>
+  </form>
+
+  <h2>Videos sorted by criteria</h2>
+  <div id="videos"></div>
+
+<script>
+  const palabras_valores = {
+    'XTB': 1, 'RXTB': 1, 'XTBV': 1, 'RXTBV': 1,
+    'TB': 1, 'RTB': 1, 'TBV': 1,
+    'XO': 1.5, 'RXO': 1.5, 'XOV': 1.5, 'RXOV': 1.5,
+    'CO': 1.5, 'RCO': 1.5,
+    'AXO': 1.5, 'ACO': 1.5, 'RACO': 1.5,
+    'LAXO': 1.5, 'LACO': 1.5, 'RLACO': 1.5,
+    'HATW': 1.5, 'RHATW': 1.5, 'HHTW': 1.5, 'RHHTW': 1.5,
+    'ATW': 2, 'RATW': 2, 'HLATW': 2, 'HRLATW': 2,
+    'HHTATW': 2, 'HHMATW': 2, 'HHJATW': 2, 'HRHJATW': 2,
+    'HMG': 2, 'HMG in': 2, 'HMG out': 2, 'HRMG': 2,
+    'HFMG': 2, 'HFMG in': 2, 'HFMG out': 2, 'HRFMG': 2,
+    'MLATW': 2, 'RMLATW': 2,
+    'HTW': 2.5, 'RHTW': 2.5,
+    'AHLATW': 2.5, 'AHRLATW': 2.5,
+    'AHHTATW': 2.5, 'AHHMATW': 2.5, 'AHHJATW': 2.5, 'AHRHJATW': 2.5,
+    'HAMG': 2.5, 'HAMG in': 2.5, 'HAMG out': 2.5, 'HARMG': 2.5,
+    'HAFMG': 2.5, 'HAFMG in': 2.5, 'HAFMG out': 2.5, 'HARFMG': 2.5,
+    'AMLATW': 2.5, 'ARMLATW': 2.5,
+    'RatATW': 3, 'RRatATW': 3, 'TATW': 3, 'MATW': 3,
+    'JATW': 3, 'RJATW': 3, 'MLRRatATW': 3, 'RMLRatATW': 3,
+    'MLMATW': 3, 'RMLTATW': 3, 'MLRJATW': 3, 'RMLJATW': 3,
+    'ARatATW': 3.5, 'ARRatATW': 3.5, 'ATATW': 3.5, 'AMATW': 3.5,
+    'AJATW': 3.5, 'ARJATW': 3.5, 'AMLRRatATW': 3.5, 'ARMLRatATW': 3.5,
+    'AMLMATW': 3.5, 'ARMLTATW': 3.5, 'AMLRJATW': 3.5, 'ARMLJATW': 3.5,
+    'LATW': 4, 'RLATW': 4, 'HTATW': 4, 'HMATW': 4, 'HJATW': 4,
+    'RHJATW': 4, 'MG': 4, 'MG in': 4, 'MG out': 4, 'RMG': 4,
+    'FMG': 4, 'FMG in': 4, 'FMG out': 4, 'RFMG': 4,
+    'HTATW NJ': 4, 'HMATW NJ': 4, 'HJATW NJ': 4, 'RHJATW NJ': 4,
+    'ALATW': 4.5, 'ARLATW': 4.5, 'AHTATW': 4.5, 'AHMATW': 4.5,
+    'AHJATW': 4.5, 'ARHJATW': 4.5,
+    'AMG': 4.5, 'AMG in': 4.5, 'AMG out': 4.5, 'ARMG': 4.5,
+    'AFMG': 4.5, 'AFMG in': 4.5, 'AFMG out': 4.5, 'ARFMG': 4.5,
+    'AHTATW NJ': 4.5, 'AHMATW NJ': 4.5, 'AHJATW NJ': 4.5, 'ARHJATW NJ': 4.5,
+    'LRatATW': 5, 'LRRatATW': 5, 'LTATW': 5, 'LMATW': 5, 'LJATW': 5,
+    'LRJATW': 5, 'PT': 5, 'RPT': 5, 'RSenATW': 5, 'SenATW': 5,
+    'NM': 5, 'RNM': 5,
+    'MGRRatATW': 5, 'MGRRatATW in': 5, 'MGRatATW': 5, 'RMGRatATW': 5,
+    'MGMATW': 5, 'MGMATW in': 5, 'MGTATW': 5, 'RMGTATW': 5,
+    'MGRJATW': 5, 'MGRJATW in': 5, 'MGJATW': 5, 'RMGJATW': 5,
+    'FMGRRatATW': 5, 'FMGRRatATW in': 5, 'FMGRatATW': 5, 'RFMGRatATW': 5,
+    'FMGMATW': 5, 'FMGMATW in': 5, 'FMGTATW': 5, 'RFMGTATW': 5,
+    'FMGRJATW': 5, 'FMGRJATW in': 5, 'FMGJATW': 5, 'RFMGJATW': 5, 'FMGRJATW in': 5,
+    'FMGJATW': 5, 'RFMGJATW': 5, 'PT NJ': 5, 'RPT NJ': 5, 'RSenATW NJ': 5, 'SenATW NJ': 5, 
+    'NM NJ': 5, 'RNM NJ': 5, 'ALRatATW': 5.5, 'ALRRatATW': 5.5, 'ALTATW': 5.5, 'ALMATW': 5.5,
+    'ALJATW': 5.5, 'ALRJATW': 5.5, 'RSATW': 5.5, 'SATW': 5.5, 'ARSenATW': 5.5, 'ASenATW': 5.5,
+    'AMGRRatATW': 5.5, 'AMGRRatATW in': 5.5, 'AMGRatATW': 5.5, 'ARMGRatATW': 5.5, 'AMGMATW': 5.5,
+    'AMGMATW in': 5.5, 'AMGTATW': 5.5, 'ARMGTATW': 5.5, 'AMGRJATW': 5.5, 'AMGRJATW in': 5.5,
+    'AMGJATW': 5.5, 'ARMGJATW': 5.5, 'AFMGRRatATW': 5.5, 'AFMGRRatATW in': 5.5, 'AFMGRatATW': 5.5,
+    'ARFMGRatATW': 5.5, 'AFMGMATW': 5.5, 'AFMGMATW in': 5.5, 'AFMGTATW': 5.5, 'ARFMGTATW': 5.5,
+    'AFMGRJATW': 5.5, 'AFMGRJATW in': 5.5, 'AFMGJATW': 5.5, 'ARFMGJATW': 5.5, 'RSATW NJ': 5.5,
+    'SATW NJ': 5.5, 'ARSenATW NJ': 5.5, 'ASenATW NJ': 5.5
+  };
+
+  let videos = [];
+
+  function timeSince(timestamp) {
+    const now = Date.now();
+    const diffMs = now - timestamp;
+    const hours = Math.floor(diffMs / (1000 * 60 * 60));
+    const days = Math.floor(hours / 24);
+    return `${days} days and ${hours % 24} hours`;
+  }
+
+  function calculateScore(video) {
+    const tricks = video.combo.trim().split(/\s+/);
+    video.tricks = tricks;
+    let total = 0;
+    let unknown = false;
+    tricks.forEach(t => {
+      if (palabras_valores[t]) {
+        total += palabras_valores[t];
+      } else {
+        unknown = true;
+      }
+    });
+    video.puntajeCombo = total;
+    video.desconocido = unknown;
+  }
+
+  function sortVideos() {
+    const hasUnknown = videos.some(v => v.desconocido);
+    if (hasUnknown) {
+      videos.sort((a, b) => {
+        if (b.uploadedAt !== a.uploadedAt) return b.uploadedAt - a.uploadedAt;
+        return a.views - b.views;
+      });
+    } else {
+      videos.sort((a, b) => {
+        if (b.puntajeCombo !== a.puntajeCombo) return b.puntajeCombo - a.puntajeCombo;
+        if (b.uploadedAt !== a.uploadedAt) return b.uploadedAt - a.uploadedAt;
+        return a.views - b.views;
+      });
+    }
+  }
+
+  function showVideos() {
+    const container = document.getElementById("videos");
+    container.innerHTML = "";
+
+    videos.forEach((video, idx) => {
+      const div = document.createElement("div");
+      div.className = "video-item";
+
+      const comboInfo = video.desconocido
+        ? `<p class="unknown">Trick/Combo: unknown</p>`
+        : `<p><strong>Combo score:</strong> ${video.puntajeCombo.toFixed(2)}</p>`;
+
+      const mailLink = `mailto:featuringia@gmail.com?subject=Request%20Deletion%20for%20Video%20${encodeURIComponent(video.title)}&body=Please%20delete%20the%20video%20titled%20"${encodeURIComponent(video.title)}".`;
+
+      div.innerHTML = `
+        <strong>Video ${idx + 1}: ${video.title}</strong>
+        <div class="video-info">
+          <p><strong>Combo:</strong> ${video.combo}</p>
+          <video width="320" controls preload="metadata" onplay="addView('${video.filename}')">
+            <source src="/videos/${video.filename}" type="video/mp4">
+            Your browser does not support the video tag.
+          </video>
+          <p><strong>Views:</strong> ${video.views}</p>
+          <p><strong>Uploaded:</strong> ${timeSince(video.uploadedAt)} ago</p>
+          ${comboInfo}
+          <p><a href="${mailLink}"><button>Request Deletion</button></a></p>
+        </div>
+        <hr />
+      `;
+      container.appendChild(div);
+    });
+  }
+
+  async function loadVideos() {
+    try {
+      const res = await fetch('/videosData');
+      const data = await res.json();
+
+      const checkFile = async (video) => {
+        try {
+          const res = await fetch(`/videos/${video.filename}`, { method: 'HEAD' });
+          return res.ok;
+        } catch {
+          return false;
+        }
+      };
+
+      const filtered = [];
+      for (const v of data) {
+        const exists = await checkFile(v);
+        if (exists) {
+          calculateScore(v);
+          filtered.push(v);
+        }
+      }
+
+      videos = filtered;
+      sortVideos();
+      showVideos();
+    } catch (err) {
+      console.error("Error loading videos:", err);
+    }
+  }
+
+  function addView(filename) {
+    fetch(`/view/${filename}`, { method: 'POST' }).catch(err =>
+      console.error("Error logging view:", err)
+    );
+  }
+  window.addView = addView;
+
+  loadVideos();
+
+  document.getElementById("uploadForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const form = e.target;
+    const formData = new FormData(form);
+
+    try {
+      const res = await fetch('/upload', {
+        method: 'POST',
+        body: formData
+      });
+
+      if (res.ok) {
+        alert("Video uploaded successfully");
+        form.reset();
+        loadVideos();
+      } else {
+        alert("Error uploading video.");
+      }
+    } catch (err) {
+      console.error("Upload error:", err);
+    }
+  });
+</script>
+
+</body>
+</html>
