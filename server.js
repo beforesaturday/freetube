@@ -4,91 +4,76 @@ const path = require('path');
 const fs = require('fs');
 
 const app = express();
-const port = process.env.PORT || 3000;
+const PORT = 3000;
 
-// Carpeta para subir videos
-const uploadFolder = path.join(__dirname, 'videos');
-if (!fs.existsSync(uploadFolder)) {
-  fs.mkdirSync(uploadFolder);
-}
-
-// Archivo para persistir datos
-const dataFile = path.join(__dirname, 'videos.json');
-
-// Cargar videos desde archivo si existe
-let videos = [];
-if (fs.existsSync(dataFile)) {
-  try {
-    const fileContent = fs.readFileSync(dataFile, 'utf-8');
-    videos = JSON.parse(fileContent);
-  } catch (err) {
-    console.error('Error al leer videos.json:', err);
-    videos = [];
-  }
-}
-
-// Función para guardar videos en disco
-function guardarVideos() {
-  fs.writeFile(dataFile, JSON.stringify(videos, null, 2), (err) => {
-    if (err) {
-      console.error('Error al guardar videos.json:', err);
-    }
-  });
-}
-
-// Middleware para subir archivos
+// Configurar almacenamiento con Multer
 const storage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, uploadFolder),
-  filename: (req, file, cb) => cb(null, Date.now() + '_' + file.originalname.replace(/\s+/g, '_'))
+  destination: (req, file, cb) => {
+    const uploadDir = path.join(__dirname, 'uploads');
+    if (!fs.existsSync(uploadDir)) {
+      fs.mkdirSync(uploadDir);
+    }
+    cb(null, 'uploads/');
+  },
+  filename: (req, file, cb) => {
+    const ext = path.extname(file.originalname);
+    const name = Date.now() + '-' + file.originalname.replace(/\s+/g, '-');
+    cb(null, name);
+  }
 });
-const upload = multer({ storage });
 
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+const upload = multer({ storage: storage });
 
-// Servir archivos estáticos
-app.use('/videos', express.static(uploadFolder));
 app.use(express.static('public'));
+app.use('/uploads', express.static('uploads'));
+app.use(express.json());
 
 // Ruta para subir video
 app.post('/upload', upload.single('video'), (req, res) => {
-  const { title, combo } = req.body;
-  if (!title || !combo || !req.file) {
-    return res.status(400).send('Faltan datos');
-  }
+  const { title, combo, isUnderground, isTutorial } = req.body;
+  const videoUrl = `/uploads/${req.file.filename}`;
 
   const newVideo = {
-    id: videos.length + 1,
     title,
-    combo: combo.trim(),
-    filename: req.file.filename,
-    uploadedAt: Date.now(),
-    views: 0
+    combo,
+    url: videoUrl,
+    isUnderground: isUnderground === 'true',
+    isTutorial: isTutorial === 'true',
+    views: 0,
+    date: new Date().toISOString()
   };
 
+  const dataPath = path.join(__dirname, 'videos.json');
+  let videos = [];
+
+  if (fs.existsSync(dataPath)) {
+    videos = JSON.parse(fs.readFileSync(dataPath));
+  }
+
   videos.push(newVideo);
-  guardarVideos(); // Persistencia
-  res.status(200).json({ success: true });
+  fs.writeFileSync(dataPath, JSON.stringify(videos, null, 2));
+
+  res.json({ success: true, video: newVideo });
 });
 
-// Ruta para obtener lista de videos
-app.get('/videosData', (req, res) => {
-  res.json(videos);
-});
+// Ruta para obtener los videos
+app.get('/videos', (req, res) => {
+  const dataPath = path.join(__dirname, 'videos.json');
 
-// Ruta para registrar vista
-app.post('/view/:filename', (req, res) => {
-  const filename = req.params.filename;
-  const video = videos.find(v => v.filename === filename);
-  if (video) {
-    video.views++;
-    guardarVideos(); // Actualizar persistencia
-    res.sendStatus(200);
+  if (fs.existsSync(dataPath)) {
+    let videos = JSON.parse(fs.readFileSync(dataPath));
+
+    // Simula aumento de visitas cada vez que se visualiza la lista
+    videos = videos.map(v => ({ ...v, views: (v.views || 0) + 1 }));
+
+    // Guardar aumento
+    fs.writeFileSync(dataPath, JSON.stringify(videos, null, 2));
+    res.json(videos);
   } else {
-    res.status(404).send('Video no encontrado');
+    res.json([]);
   }
 });
 
-app.listen(port, () => {
-  console.log(`Servidor escuchando en http://localhost:${port}`);
+app.listen(PORT, () => {
+  console.log(`Servidor escuchando en http://localhost:${PORT}`);
 });
