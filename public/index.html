@@ -5,93 +5,162 @@
   <title>FreeTube</title>
   <style>
     body {
-      background-color: #000000;
-      color: #00C896;
       font-family: Arial, sans-serif;
+      background-color: #121212;
+      color: #eee;
       margin: 0;
       padding: 20px;
     }
     h1 {
-      color: #B2FFFF;
       text-align: center;
-      font-size: 3em;
       margin-bottom: 20px;
     }
-    h2 {
-      color: #00C896;
-      margin-top: 40px;
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
     }
-    form {
-      margin-bottom: 30px;
+    .tabs {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 20px;
     }
-    input[type="file"],
-    input[type="text"],
-    button {
-      background-color: #000000;
-      color: #00C896;
-      border: 1px solid #00C896;
-      padding: 10px;
-      margin-top: 10px;
-      margin-right: 10px;
+    .tab {
+      background-color: #333;
+      color: #eee;
+      padding: 10px 20px;
       cursor: pointer;
-      font-size: 1em;
+      border: none;
+      outline: none;
+      margin: 0 5px;
+      border-radius: 5px 5px 0 0;
+      transition: background-color 0.3s ease;
     }
-    input[type="file"]::file-selector-button {
-      background-color: #000000;
-      color: #00C896;
-      border: 1px solid #00C896;
-      padding: 5px 10px;
-      cursor: pointer;
+    .tab:hover {
+      background-color: #555;
+    }
+    .tab.active {
+      background-color: #1db954;
+      color: #fff;
+      font-weight: bold;
     }
     #videos {
-      margin-top: 20px;
-    }
-    video {
-      display: block;
-      margin-bottom: 10px;
-      max-width: 100%;
-    }
-    hr {
-      border: 1px solid #00C896;
+      background-color: #222;
+      padding: 15px;
+      border-radius: 5px;
+      min-height: 200px;
     }
     .video-item {
-      border: 1px solid #00C896;
-      padding: 15px;
-      margin-bottom: 20px;
+      border-bottom: 1px solid #444;
+      padding: 10px 0;
     }
-    .video-item strong {
-      display: block;
-      margin-bottom: 8px;
-      font-size: 1.2em;
-      color: #B2FFFF;
+    .video-item:last-child {
+      border-bottom: none;
     }
-    .video-info p {
-      margin: 4px 0;
+    .video-item p {
+      margin: 5px 0;
     }
-    .unknown {
-      color: #FF5555;
+    video {
+      max-width: 100%;
+      margin-top: 8px;
+      border-radius: 5px;
+    }
+    .delete-button {
+      margin-top: 8px;
+      background-color: #e74c3c;
+      border: none;
+      color: white;
+      padding: 8px 12px;
+      border-radius: 4px;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-block;
+    }
+    form#uploadForm {
+      background-color: #222;
+      padding: 20px;
+      border-radius: 5px;
+      margin-top: 30px;
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+    }
+    label {
       font-weight: bold;
+    }
+    input[type="text"], input[type="file"] {
+      padding: 8px;
+      border: none;
+      border-radius: 4px;
+      width: 100%;
+      box-sizing: border-box;
+    }
+    .checkboxes {
+      display: flex;
+      gap: 20px;
+      align-items: center;
+    }
+    .checkboxes label {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+    button {
+      background-color: #1db954;
+      border: none;
+      color: white;
+      padding: 12px 20px;
+      cursor: pointer;
+      font-weight: bold;
+      border-radius: 5px;
+      transition: background-color 0.3s ease;
+    }
+    button:hover {
+      background-color: #17a04b;
+    }
+    button:disabled {
+      background-color: #888;
+      cursor: not-allowed;
+    }
+    @media (max-width: 600px) {
+      .tabs {
+        flex-direction: column;
+      }
+      .tab {
+        margin: 5px 0;
+      }
+      .checkboxes {
+        flex-direction: column;
+        align-items: flex-start;
+      }
     }
   </style>
 </head>
 <body>
-
+<div class="container">
   <h1>FreeTube</h1>
-
-  <h2>Upload a video</h2>
+  <div class="tabs">
+    <button class="tab" id="tabUnderground">Underground Clips</button>
+    <button class="tab" id="tabTutorials">Tutorials</button>
+  </div>
   <form id="uploadForm" enctype="multipart/form-data">
-    <input type="text" name="title" placeholder="Video title" required />
-    <input type="text" name="combo" placeholder="Combo used (e.g. ATW HATW HTW)" required />
-    <input type="file" name="video" accept="video/*" required />
-    <button type="submit">Upload</button>
+    <label for="title">Video Title</label>
+    <input type="text" id="title" name="title" required placeholder="Video title" />
+    <label for="combo">Trick/Combo Used</label>
+    <input type="text" id="combo" name="combo" placeholder="Combo used (e.g. ATW HATW)" />
+    <label for="video">Select Video File</label>
+    <input type="file" id="video" name="video" accept="video/*" required />
+    <div class="checkboxes">
+      <label><input type="checkbox" id="isUnderground" /> Underground Clip</label>
+      <label><input type="checkbox" id="isTutorial" /> Tutorial</label>
+    </div>
+    <button type="submit" id="uploadBtn">Upload</button>
   </form>
-
-  <h2>Videos sorted by criteria</h2>
+  <h2>Videos</h2>
   <div id="videos"></div>
-
+</div>
 <script>
-  const palabras_valores = {
-    'XTB': 1, 'RXTB': 1, 'XTBV': 1, 'RXTBV': 1,
+const palabras_valores = {
+   'XTB': 1, 'RXTB': 1, 'XTBV': 1, 'RXTBV': 1,
     'TB': 1, 'RTB': 1, 'TBV': 1,
     'XO': 1.5, 'RXO': 1.5, 'XOV': 1.5, 'RXOV': 1.5,
     'CO': 1.5, 'RCO': 1.5,
@@ -142,146 +211,125 @@
     'ARFMGRatATW': 5.5, 'AFMGMATW': 5.5, 'AFMGMATW in': 5.5, 'AFMGTATW': 5.5, 'ARFMGTATW': 5.5,
     'AFMGRJATW': 5.5, 'AFMGRJATW in': 5.5, 'AFMGJATW': 5.5, 'ARFMGJATW': 5.5, 'RSATW NJ': 5.5,
     'SATW NJ': 5.5, 'ARSenATW NJ': 5.5, 'ASenATW NJ': 5.5
-  };
+};
 
-  let videos = [];
-
-  function timeSince(timestamp) {
-    const now = Date.now();
-    const diffMs = now - timestamp;
-    const hours = Math.floor(diffMs / (1000 * 60 * 60));
-    const days = Math.floor(hours / 24);
-    return `${days} days and ${hours % 24} hours`;
-  }
-
-  function calculateScore(video) {
-    const tricks = video.combo.trim().split(/\s+/);
-    video.tricks = tricks;
-    let total = 0;
-    let unknown = false;
-    tricks.forEach(t => {
-      if (palabras_valores[t]) {
-        total += palabras_valores[t];
-      } else {
-        unknown = true;
-      }
-    });
-    video.puntajeCombo = total;
-    video.desconocido = unknown;
-  }
-
-  function sortVideos() {
-    const hasUnknown = videos.some(v => v.desconocido);
-    if (hasUnknown) {
-      videos.sort((a, b) => {
-        if (b.uploadedAt !== a.uploadedAt) return b.uploadedAt - a.uploadedAt;
-        return a.views - b.views;
-      });
+function calculateScore(video) {
+  const tricks = video.combo?.trim().split(/\s+/) || [];
+  video.tricks = tricks;
+  let total = 0;
+  let unknown = false;
+  tricks.forEach(t => {
+    if (palabras_valores[t]) {
+      total += palabras_valores[t];
     } else {
-      videos.sort((a, b) => {
-        if (b.puntajeCombo !== a.puntajeCombo) return b.puntajeCombo - a.puntajeCombo;
-        if (b.uploadedAt !== a.uploadedAt) return b.uploadedAt - a.uploadedAt;
-        return a.views - b.views;
-      });
-    }
-  }
-
-  function showVideos() {
-    const container = document.getElementById("videos");
-    container.innerHTML = "";
-
-    videos.forEach((video, idx) => {
-      const div = document.createElement("div");
-      div.className = "video-item";
-
-      const comboInfo = video.desconocido
-        ? `<p class="unknown">Trick/Combo: unknown</p>`
-        : `<p><strong>Combo score:</strong> ${video.puntajeCombo.toFixed(2)}</p>`;
-
-      const mailLink = `mailto:featuringia@gmail.com?subject=Request%20Deletion%20for%20Video%20${encodeURIComponent(video.title)}&body=Please%20delete%20the%20video%20titled%20"${encodeURIComponent(video.title)}".`;
-
-      div.innerHTML = `
-        <strong>Video ${idx + 1}: ${video.title}</strong>
-        <div class="video-info">
-          <p><strong>Combo:</strong> ${video.combo}</p>
-          <video width="320" controls preload="metadata" onplay="addView('${video.filename}')">
-            <source src="/videos/${video.filename}" type="video/mp4">
-            Your browser does not support the video tag.
-          </video>
-          <p><strong>Views:</strong> ${video.views}</p>
-          <p><strong>Uploaded:</strong> ${timeSince(video.uploadedAt)} ago</p>
-          ${comboInfo}
-          <p><a href="${mailLink}"><button>Request Deletion</button></a></p>
-        </div>
-        <hr />
-      `;
-      container.appendChild(div);
-    });
-  }
-
-  async function loadVideos() {
-    try {
-      const res = await fetch('/videosData');
-      const data = await res.json();
-
-      const checkFile = async (video) => {
-        try {
-          const res = await fetch(`/videos/${video.filename}`, { method: 'HEAD' });
-          return res.ok;
-        } catch {
-          return false;
-        }
-      };
-
-      const filtered = [];
-      for (const v of data) {
-        const exists = await checkFile(v);
-        if (exists) {
-          calculateScore(v);
-          filtered.push(v);
-        }
-      }
-
-      videos = filtered;
-      sortVideos();
-      showVideos();
-    } catch (err) {
-      console.error("Error loading videos:", err);
-    }
-  }
-
-  function addView(filename) {
-    fetch(`/view/${filename}`, { method: 'POST' }).catch(err =>
-      console.error("Error logging view:", err)
-    );
-  }
-  window.addView = addView;
-
-  loadVideos();
-
-  document.getElementById("uploadForm").addEventListener("submit", async (e) => {
-    e.preventDefault();
-    const form = e.target;
-    const formData = new FormData(form);
-
-    try {
-      const res = await fetch('/upload', {
-        method: 'POST',
-        body: formData
-      });
-
-      if (res.ok) {
-        alert("Video uploaded successfully");
-        form.reset();
-        loadVideos();
-      } else {
-        alert("Error uploading video.");
-      }
-    } catch (err) {
-      console.error("Upload error:", err);
+      unknown = true;
     }
   });
-</script>
+  video.puntajeCombo = total;
+  video.desconocido = unknown;
+}
 
+function sortVideos() {
+  const hasUnknown = videos.some(v => v.desconocido);
+  if (hasUnknown) {
+    videos.sort((a, b) => b.uploadedAt - a.uploadedAt || a.views - b.views);
+  } else {
+    videos.sort((a, b) => b.puntajeCombo - a.puntajeCombo || b.uploadedAt - a.uploadedAt || a.views - b.views);
+  }
+}
+
+const videosDiv = document.getElementById('videos');
+const tabTutorials = document.getElementById('tabTutorials');
+const tabUnderground = document.getElementById('tabUnderground');
+const uploadForm = document.getElementById('uploadForm');
+const uploadBtn = document.getElementById('uploadBtn');
+const isUndergroundCheckbox = document.getElementById('isUnderground');
+const isTutorialCheckbox = document.getElementById('isTutorial');
+const comboInput = document.getElementById('combo');
+
+let videos = [];
+let currentTab = 'underground';
+
+function updateComboFieldState() {
+  comboInput.disabled = isTutorialCheckbox.checked;
+  if (isTutorialCheckbox.checked) comboInput.value = '';
+}
+
+isTutorialCheckbox.addEventListener('change', updateComboFieldState);
+isUndergroundCheckbox.addEventListener('change', updateComboFieldState);
+
+async function loadVideos() {
+  const res = await fetch('/videos');
+  const data = await res.json();
+  videos = data.map(v => {
+    v.uploadedAt = new Date(v.date).getTime();
+    if (v.isUnderground && v.combo) calculateScore(v);
+    return v;
+  });
+  sortVideos();
+  renderVideos();
+}
+
+function renderVideos() {
+  const filtered = currentTab === 'tutorials' ? videos.filter(v => v.isTutorial) : videos.filter(v => v.isUnderground);
+  videosDiv.innerHTML = filtered.length === 0 ? '<p>No videos found.</p>' : '';
+
+  filtered.forEach(video => {
+    const div = document.createElement('div');
+    div.className = 'video-item';
+    const mailLink = `mailto:featuringia@gmail.com?subject=${encodeURIComponent("Solicitud de eliminación de video")}&body=${encodeURIComponent(`Hola,\n\nQuisiera solicitar la eliminación del siguiente video:\n\nTítulo: ${video.title}\n\nGracias.`)}`;
+
+    div.innerHTML = `
+      <p><strong>Title:</strong> ${video.title}</p>
+      ${video.isUnderground && video.combo ? `<p><strong>Trick/Combo:</strong> ${video.combo}</p>` : ''}
+      ${video.isUnderground && video.combo ? (video.desconocido ? `<p class="unknown">Punctuation: unknown</p>` : `<p><strong>Combo score:</strong> ${video.puntajeCombo.toFixed(2)}</p>`) : ''}
+      <p><strong>Type:</strong> ${video.isTutorial ? 'Tutorial' : 'Underground Clip'}</p>
+      <p><strong>Views:</strong> ${video.views || 0}</p>
+      <p><strong>Uploaded:</strong> ${new Date(video.date).toLocaleString()}</p>
+      <video controls src="${video.url}"></video>
+      <a class="delete-button" href="${mailLink}">Solicitar eliminación</a>
+    `;
+    videosDiv.appendChild(div);
+  });
+}
+
+uploadForm.addEventListener('submit', async function (e) {
+  e.preventDefault();
+  uploadBtn.disabled = true;
+  const formData = new FormData(uploadForm);
+  formData.append('isUnderground', isUndergroundCheckbox.checked);
+  formData.append('isTutorial', isTutorialCheckbox.checked);
+
+  try {
+    const res = await fetch('/upload', { method: 'POST', body: formData });
+    if (!res.ok) throw new Error('Error uploading video');
+    await loadVideos();
+    uploadForm.reset();
+    updateComboFieldState();
+  } catch (err) {
+    alert(err.message);
+  } finally {
+    uploadBtn.disabled = false;
+  }
+});
+
+tabTutorials.addEventListener('click', () => {
+  currentTab = 'tutorials';
+  tabTutorials.classList.add('active');
+  tabUnderground.classList.remove('active');
+  renderVideos();
+});
+
+tabUnderground.addEventListener('click', () => {
+  currentTab = 'underground';
+  tabUnderground.classList.add('active');
+  tabTutorials.classList.remove('active');
+  renderVideos();
+});
+
+tabUnderground.classList.add('active');
+updateComboFieldState();
+loadVideos();
+</script>
 </body>
 </html>
